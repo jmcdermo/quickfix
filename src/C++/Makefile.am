@@ -5,6 +5,7 @@ LEX += -+ -olex.yy.c
 lib_LTLIBRARIES = libquickfix.la
 libquickfix_la_SOURCES = \
 	Allocator.h \
+	AtomicCount.h \
 	Session.cpp \
 	Session.h \
 	TimeRange.cpp \
@@ -97,6 +98,7 @@ libquickfix_la_SOURCES = \
 	Mutex.h \
 	Event.h \
 	Queue.h \
+	SharedArray.h \
 	Exceptions.h \
 	Utility.cpp \
 	Utility.h \
@@ -104,8 +106,11 @@ libquickfix_la_SOURCES = \
 	DeprecatedValues.h \
 	FlexLexer.h \
 	DOMDocument.h \
-	LIBXML_DOMDocument.cpp \
-	LIBXML_DOMDocument.h \
+	PUGIXML_DOMDocument.cpp \
+	PUGIXML_DOMDocument.h \
+	pugixml.cpp \
+	pugixml.hpp \
+	pugiconfig.hpp \
 	MessageCracker.h \
 	Responder.h
 
@@ -159,6 +164,6 @@ uninstall-local:
 
 EXTRA_DIST = strptime.c strptime.h
 
-libquickfix_la_LDFLAGS = -version-info 15:0:0
+libquickfix_la_LDFLAGS = -version-info 16:1:0
 
 INCLUDES =-I. -I.. -I../..

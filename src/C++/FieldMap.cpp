@@ -1,5 +1,5 @@
 /****************************************************************************
-** Copyright (c) quickfixengine.org  All rights reserved.
+** Copyright (c) 2001-2014
 **
 ** This file is part of the QuickFIX FIX Engine
 **
@@ -59,14 +59,22 @@ void FieldMap::addGroup( int field, const FieldMap& group, bool setCount )
 {
   FieldMap * pGroup = new FieldMap( group );
 
-  std::vector< FieldMap*>& vec = m_groups[ field ];
-  vec.push_back( pGroup );
-
-  if( setCount )
-    setField( IntField( field, vec.size() ) );
+  addGroupPtr( field, pGroup, setCount );
 }
 
-void FieldMap::replaceGroup( int num, int field, FieldMap& group )
+void FieldMap::addGroupPtr( int field, FieldMap * group, bool setCount )
+{
+    if( group == 0 )
+        return;
+
+    std::vector< FieldMap* >& vec = m_groups[ field ];
+    vec.push_back( group );
+
+    if( setCount )
+        setField( IntField( field, (int)vec.size() ) );
+}
+
+void FieldMap::replaceGroup( int num, int field, const FieldMap& group )
 {
   Groups::const_iterator i = m_groups.find( field );
   if ( i == m_groups.end() ) return;
@@ -83,34 +91,27 @@ void FieldMap::removeGroup( int num, int field )
   std::vector< FieldMap* >& vector = i->second;
   if ( vector.size() < ( unsigned ) num ) return;
 
-  std::deque< FieldMap* > queue;
-  while( vector.size() > (unsigned)num )
-  {
-    queue.push_back( vector.back() );
-    vector.pop_back();
-  }
-  delete vector.back();
-  vector.pop_back();
-  while( queue.size() )
-  {
-    vector.push_back( queue.front() );
-    queue.pop_front();
-  }
+  std::vector< FieldMap* >::iterator iter = vector.begin();
+  std::advance( iter, ( num - 1 ) );
+
+  delete (*iter);
+  vector.erase( iter );
 
   if( vector.size() == 0 )
   {
     m_groups.erase( field );
+    removeField( field );
   }
   else
   {
-    IntField groupCount( field, vector.size() );
+    IntField groupCount( field, (int)vector.size() );
     setField( groupCount, true );
   }
 }
 
 void FieldMap::removeGroup( int field )
 {
-  removeGroup( groupCount(field), field );
+  removeGroup( (int)groupCount(field), field );
 }
 
 void FieldMap::removeField( int field )
@@ -122,7 +123,7 @@ void FieldMap::removeField( int field )
 
 bool FieldMap::hasGroup( int num, int field ) const
 {
-  return groupCount(field) >= num;
+  return (int)groupCount(field) >= num;
 }
 
 bool FieldMap::hasGroup( int field ) const
@@ -131,7 +132,7 @@ bool FieldMap::hasGroup( int field ) const
   return i != m_groups.end();
 }
 
-int FieldMap::groupCount( int field ) const
+size_t FieldMap::groupCount( int field ) const
 {
   Groups::const_iterator i = m_groups.find( field );
   if( i == m_groups.end() )
@@ -158,9 +159,9 @@ bool FieldMap::isEmpty()
   return m_fields.size() == 0;
 }
 
-int FieldMap::totalFields() const
+size_t FieldMap::totalFields() const
 {
-  int result = m_fields.size();
+  size_t result = m_fields.size();
     
   Groups::const_iterator i;
   for ( i = m_groups.begin(); i != m_groups.end(); ++i )
@@ -172,17 +173,8 @@ int FieldMap::totalFields() const
   return result;
 }
 
-std::string& FieldMap::calculateString( std::string& result, bool clear ) const
-{
-#if defined(_MSC_VER) && _MSC_VER < 1300
-  if( clear ) result = "";
-#else
-  if( clear ) result.clear();
-#endif
-
-  if( !result.size() )
-    result.reserve( totalFields() * 32 );
-    
+std::string& FieldMap::calculateString( std::string& result ) const
+{  
   Fields::const_iterator i;
   for ( i = m_fields.begin(); i != m_fields.end(); ++i )
   {
@@ -194,7 +186,7 @@ std::string& FieldMap::calculateString( std::string& result, bool clear ) const
     if ( j == m_groups.end() ) continue;
     std::vector < FieldMap* > ::const_iterator k;
     for ( k = j->second.begin(); k != j->second.end(); ++k )
-      ( *k ) ->calculateString( result, false );
+      ( *k ) ->calculateString( result );
   }
   return result;
 }
@@ -242,4 +234,5 @@ int FieldMap::calculateTotal( int checkSumField ) const
   }
   return result;
 }
+
 }
